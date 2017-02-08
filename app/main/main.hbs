@@ -1,0 +1,32 @@
+<p>
+    Session ID from Express: {{ssid_ex}}
+</p>
+<p>
+    User ID from Express: {{userid_ex}}
+</p>
+<p>
+    Session ID from Socket.io <span id="ssid_sio">...</span>
+</p>
+<p>
+    User ID from Socket.io <span id="user_id">...</span>
+</p>
+<script>
+    var socket;
+
+    (function()
+    {
+        socket = io();
+
+        socket.on('set_stuff', function(data)
+        {
+            //alert('setting');
+            var ssid = document.getElementById('ssid_sio');
+            var uid = document.getElementById('user_id');
+            ssid.innerHTML = data.ssid;
+            uid.innerHTML = data.uid;
+        });
+
+    })();
+
+
+</script>
