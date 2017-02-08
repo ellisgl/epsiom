@@ -9,3 +9,5 @@ Code based on:
 Install
 ---
 Download, extract and run `npm isntall`
+
+Default user/pass: admin password
