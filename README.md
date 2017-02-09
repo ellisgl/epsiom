@@ -16,4 +16,4 @@ Role Based Authorization
 ---
 users table: role_id connects to the roles table.<br>
 roles table: role_id (auto inc) and a name.<br>
-role_roles table: role_id1 is for the role that you want to be accessed, role_id2 is the id of the role you want to have access to that role. Simplistic hierarchy.<br>  
+role_roles table: role_id1 is for the role, role_id2 is the id of the role you want role_id1 to be able to access. Simplistic hierarchy.<br>  
