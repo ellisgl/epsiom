@@ -11,11 +11,11 @@
   "dependencies": {
     "async": "^2.6.4",
     "bcryptjs": "^2.4.0",
-    "body-parser": "^1.20.1",
+    "body-parser": "^1.20.4",
     "connect-flash": "^0.1.1",
     "cookie-parser": "^1.4.7",
     "cookie-session": "^2.1.1",
-    "express": "^4.21.2",
+    "express": "^4.22.1",
     "express-hbs": "^2.4.0",
     "express-mysql-session": "^3.0.3",
     "express-session": "^1.18.2",
