@@ -19,7 +19,7 @@
     "express-hbs": "^3.0.0",
     "express-mysql-session": "^3.0.3",
     "express-session": "^1.18.2",
-    "multer": "^2.2.0",
+    "multer": "^2.3.0",
     "mysql": "^2.13.0",
     "passport": "^0.6.0",
     "passport-local": "^1.0.0",
