@@ -2,21 +2,15 @@
 
 function initSocket(app, passport, db, authorization, io)
 {
+    // Only authenticated handshakes get this far (see app/index.js)
     io.on('connection', function (socket)
     {
-        //console.log('User connected');
+        const req = socket.request;
 
-        if(socket.conn.request.hasOwnProperty('sessionID') &&socket.conn.request.session.hasOwnProperty('passport'))
-        {
-            socket.emit('set_stuff', {
-                ssid: socket.conn.request.sessionID,
-                uid: socket.conn.request.session.passport.user
-            });
-        }
-        else
-        {
-            console.log('Invalid Session!');
-        }
+        socket.emit('set_stuff', {
+            ssid: req.sessionID,
+            uid: req.user.user_id
+        });
     });
 }
 

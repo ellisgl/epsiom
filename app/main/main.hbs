@@ -10,23 +10,15 @@
 <p>
     User ID from Socket.io <span id="user_id">...</span>
 </p>
+<form action="/logout" method="post">
+    <button type="submit">Log out</button>
+</form>
 <script>
-    var socket;
+    const socket = io();
 
-    (function()
+    socket.on('set_stuff', function (data)
     {
-        socket = io();
-
-        socket.on('set_stuff', function(data)
-        {
-            //alert('setting');
-            var ssid = document.getElementById('ssid_sio');
-            var uid = document.getElementById('user_id');
-            ssid.innerHTML = data.ssid;
-            uid.innerHTML = data.uid;
-        });
-
-    })();
-
-
+        document.getElementById('ssid_sio').textContent = data.ssid;
+        document.getElementById('user_id').textContent = data.uid;
+    });
 </script>

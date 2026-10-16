@@ -1,91 +1,43 @@
 'use strict';
 
+const express = require('express');
+
+// Placeholder until the admin interface is built (see README Todo)
+function notImplemented(req, res)
+{
+    res.sendStatus(501);
+}
+
 function initAdmin(app, passport, db, authorization)
 {
-    app.get('/admin', passport.authenticationMiddleware(), authorization.hasRole('Admin'), function(req, res)
-    {
-        // Do stuff!
-    });
+    const router = express.Router();
 
-    app.get('/admin/users', passport.authenticationMiddleware(), authorization.hasRole('Admin'), function(req, res)
-    {
-        // Do stuff!
-    });
+    // Everything under /admin requires a logged in Admin (or a role above it)
+    router.use(passport.authenticationMiddleware(), authorization.hasRole('Admin'));
 
-    app.get('/admin/change_password/:user_id', passport.authenticationMiddleware(), authorization.hasRole('Admin'), function(req, res)
-    {
-        // Do stuff!
-    });
+    router.get('/', notImplemented);
 
-    app.post('/admin/change_password', passport.authenticationMiddleware(), authorization.hasRole('Admin'), function(req, res)
-    {
-        // Do stuff!
-    });
+    // Users
+    router.get('/users', notImplemented);
+    router.get('/change_password/:user_id', notImplemented);
+    router.post('/change_password', notImplemented);
+    router.get('/delete_user/:user_id', notImplemented);
+    router.post('/delete_user', notImplemented);
+    router.get('/edit_user/:user_id', notImplemented);
+    router.post('/edit_user', notImplemented);
+    router.get('/create_user', notImplemented);
+    router.post('/create_user', notImplemented);
 
-    app.get('/admin/delete_user/:user_id', passport.authenticationMiddleware(), authorization.hasRole('Admin'), function(req, res)
-    {
-        // Do stuff!
-    });
+    // Roles
+    router.get('/roles', notImplemented);
+    router.get('/edit_role/:role_id', notImplemented);
+    router.post('/edit_role', notImplemented);
+    router.get('/create_role', notImplemented);
+    router.post('/create_role', notImplemented);
+    router.get('/delete_role/:role_id', notImplemented);
+    router.post('/delete_role', notImplemented);
 
-    app.post('/admin/delete_user', passport.authenticationMiddleware(), authorization.hasRole('Admin'), function(req, res)
-    {
-        // Do stuff!
-    });
-
-    app.get('/admin/edit_user/:user_id', passport.authenticationMiddleware(), authorization.hasRole('Admin'), function(req, res)
-    {
-        // Do stuff!
-    });
-
-    app.post('/admin/edit_user', passport.authenticationMiddleware(), authorization.hasRole('Admin'), function(req, res)
-    {
-        // Do stuff!
-    });
-
-    app.get('/admin/create_user', passport.authenticationMiddleware(), authorization.hasRole('Admin'), function(req, res)
-    {
-        // Do stuff!
-    });
-
-    app.post('/admin/create_user', passport.authenticationMiddleware(), authorization.hasRole('Admin'), function(req, res)
-    {
-        // Do stuff!
-    });
-
-    app.get('/admin/roles', passport.authenticationMiddleware(), authorization.hasRole('Admin'), function(req, res)
-    {
-
-    });
-
-    app.get('/admin/edit_role/:role_id', passport.authenticationMiddleware(), authorization.hasRole('Admin'), function(req, res)
-    {
-
-    });
-
-    app.post('/admin/edit_role', passport.authenticationMiddleware(), authorization.hasRole('Admin'), function(req, res)
-    {
-
-    });
-
-    app.get('/admin/create_role', passport.authenticationMiddleware(), authorization.hasRole('Admin'), function(req, res)
-    {
-
-    });
-
-    app.post('/admin/create_role', passport.authenticationMiddleware(), authorization.hasRole('Admin'), function(req, res)
-    {
-
-    });
-
-    app.get('/admin/delete_role/:role_id', passport.authenticationMiddleware(), authorization.hasRole('Admin'), function(req, res)
-    {
-        // Do stuff!
-    });
-
-    app.post('/admin/delete_role', passport.authenticationMiddleware(), authorization.hasRole('Admin'), function(req, res)
-    {
-        // Do stuff!
-    });
+    app.use('/admin', router);
 }
 
 module.exports = initAdmin;

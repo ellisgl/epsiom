@@ -1,103 +1,139 @@
 'use strict';
-//http://stackoverflow.com/questions/25532692/how-to-share-sessions-with-socket-io-1-x-and-express-4-x
+
+const http          = require('node:http');
+const path          = require('node:path');
 const express       = require('express');
-const fs            = require('fs');
-const path          = require('path');
 const hbs           = require('express-hbs');
-const cookieParser  = require('cookie-parser')();
-const bodyParser    = require('body-parser');
 const passport      = require('passport');
-const flash         = require('connect-flash');
 const session       = require('express-session');
-const MySQL         = require('mysql');
 const MySQLStore    = require('express-mysql-session')(session);
-const config        = require('../config');
+const { Server }    = require('socket.io');
+const createPool    = require('./db');
+const flash         = require('./flash');
 const authorization = require('./authorization');
-const app           = express();
-const server        = require('http').createServer(app);
-const io            = require('socket.io')(server);
 
-// Start MySQL
-const db = MySQL.createConnection(config.db);
+function createApp(config)
+{
+    const app    = express();
+    const server = http.createServer(app);
+    const io     = new Server(server);
 
-// Configure Passport (Local Strategy)
-require('./authentication').init(passport, db);
-const passportInit    = passport.initialize();
-const passportSession = passport.session();
+    // Start MySQL
+    const db = createPool(config.db);
 
-// Init the Role Base Authorization
-authorization.init({app: app, db: db});
+    // Configure Passport (Local Strategy)
+    require('./authentication').init(passport, db);
 
-// Setup Express
-app.use(express.static('public'));
-app.use(cookieParser); // read cookies (needed for auth)
-app.use(bodyParser.json()); // get information from html forms
-app.use(bodyParser.urlencoded({extended: true}));
+    // Init the Role Base Authorization
+    authorization.init({ db });
 
-// Setup the HBS view engine
-app.engine('hbs', hbs.express4({
-                                   defaultLayout: 'app/layout',
-                                   partialsDir: path.join(__dirname),
-                                   layoutsDir: path.join(__dirname)
-                               }));
-app.set('view engine', 'hbs');
-app.set('views', path.join(__dirname));
+    // Setup Express
+    app.use(express.static(path.join(__dirname, '..', 'public')));
+    app.use(express.json());
+    app.use(express.urlencoded({ extended: false }));
 
-// Set up the session storage and link to Express
-const sessionStore = new MySQLStore({
-    checkExpirationInterval: config.app.session_clean,
-    expiration: config.app.session_expiration
-}, db);
+    // Setup the HBS view engine
+    app.engine('hbs', hbs.express4({
+        defaultLayout: path.join(__dirname, 'layout'),
+        partialsDir: __dirname,
+        layoutsDir: __dirname
+    }));
+    app.set('view engine', 'hbs');
+    app.set('views', __dirname);
 
-const sessionMiddleware = session({
-                                      key: config.app.session_key,
-                                      secret: config.app.session_secret,
-                                      store: sessionStore,
-                                      resave: true,
-                                      httpOnly: true,
-                                      ephemeral: true,
-                                      saveUninitialized: true,
-                                      cookie: {},
-                                      secure: true
-                                  });
-app.use(sessionMiddleware);
+    // Set up the session storage and link to Express
+    const sessionStore = new MySQLStore({
+        checkExpirationInterval: config.app.session_clean,
+        expiration: config.app.session_expiration
+    }, db);
 
+    const sessionMiddleware = session({
+        name: config.app.session_key,
+        secret: config.app.session_secret,
+        store: sessionStore,
+        resave: false,
+        saveUninitialized: false,
+        cookie: {
+            httpOnly: true,
+            sameSite: 'lax',
+            secure: config.app.production,
+            maxAge: config.app.session_expiration
+        }
+    });
 
-// Move passport and flash into Express
-app.use(passportInit);
-app.use(passportSession); // persistent login sessions
-app.use(flash()); // use connect-flash for flash messages stored in session
+    if (config.app.production)
+    {
+        // Needed for secure cookies behind a reverse proxy
+        app.set('trust proxy', 1);
+    }
 
-// Socket stuff
+    app.use(sessionMiddleware);
+    app.use(passport.session()); // persistent login sessions
+    app.use(flash()); // one-time messages stored in the session
 
-io.use(function (socket, next)
-       {
-           socket.client.request.originalUrl = socket.client.request.url;
-           cookieParser(socket.client.request, socket.client.request.res, next);
-       });
+    // Share the Express session and Passport user with Socket.io.
+    // Only run on the handshake request, not on every HTTP long-polling request.
+    // https://socket.io/how-to/use-with-passport
+    function onlyForHandshake(middleware)
+    {
+        return function (req, res, next)
+        {
+            if (req._query.sid === undefined)
+            {
+                middleware(req, res, next);
+            }
+            else
+            {
+                next();
+            }
+        };
+    }
 
-io.use(function (socket, next)
-       {
-           socket.client.request.originalUrl = socket.client.request.url;
-           sessionMiddleware(socket.client.request, socket.client.request.res, next);
-       });
+    io.engine.use(onlyForHandshake(sessionMiddleware));
+    io.engine.use(onlyForHandshake(passport.session()));
+    io.engine.use(onlyForHandshake(function (req, res, next)
+    {
+        if (req.user)
+        {
+            next();
+        }
+        else
+        {
+            res.writeHead(401);
+            res.end();
+        }
+    }));
 
-io.use(function (socket, next)
-       {
-           passportInit(socket.client.request, socket.client.request.res, next);
-       });
+    // Routes
+    require('./main').init(app, passport, db, authorization);
+    require('./admin').init(app, passport, db, authorization);
+    require('./user').init(app, passport, db, authorization);
 
-io.use(function (socket, next)
-       {
-           passportSession(socket.client.request, socket.client.request.res, next);
-       });
+    // Socket init
+    require('./sockets').init(app, passport, db, authorization, io);
 
-// Routes
-require('./main').init(app, passport, db, authorization);
-require('./admin').init(app, passport, db, authorization);
-require('./user').init(app, passport, db, authorization);
+    // 404
+    app.use(function (req, res)
+    {
+        res.status(404).send('Not Found');
+    });
 
-// Socket init
-require('./sockets').init(app, passport, db, authorization, io);
+    // Errors (Express 5 also forwards rejected promises from async handlers here)
+    app.use(function (err, req, res, next)
+    {
+        console.error(err);
+        res.status(err.status || 500).send('Internal Server Error');
+    });
 
-module.exports = server;
+    async function close()
+    {
+        // io.close() also closes the HTTP server
+        await new Promise((resolve) => io.close(() => resolve()));
+        await sessionStore.close();
+        await db.end();
+    }
+
+    return { app, server, io, db, close };
+}
+
+module.exports = createApp;

@@ -1,5 +1,7 @@
+'use strict';
+
 module.exports = {
-    getUserByUsername : function(username)
+    getUserByUsername: function (username)
     {
         return {
             sql: 'SELECT * FROM `users` WHERE `username` = ?',
@@ -7,11 +9,11 @@ module.exports = {
         };
     },
 
-    getUserById: function(user_id)
+    getUserById: function (user_id)
     {
         return {
             sql: 'SELECT * FROM `users` WHERE `user_id` = ?',
             values: [user_id]
-        }
+        };
     }
 };
