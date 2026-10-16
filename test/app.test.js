@@ -4,6 +4,7 @@ const { describe, it, before, after } = require('node:test');
 const assert                          = require('node:assert/strict');
 const request                         = require('supertest');
 const { io }                          = require('socket.io-client');
+const authorization                   = require('../app/authorization');
 const { startStack }                  = require('./helpers');
 
 describe('epsiom', { timeout: 180000 }, () =>
@@ -156,6 +157,55 @@ describe('epsiom', { timeout: 180000 }, () =>
 
             assert.equal(res.status, 302);
             assert.equal(res.headers.location, '/login');
+        });
+
+        // Runs hasRole() for a user with the given role_id; resolves to true if next() was called
+        async function allowed(role, role_id)
+        {
+            let passed = false;
+
+            await authorization.hasRole(role)({ user: { role_id } }, { sendStatus() {} }, () => { passed = true; });
+
+            return passed;
+        }
+
+        it('follows the hierarchy through every level', async () =>
+        {
+            // Developer (1) > Admin (2) > Moderator (4) > User (3)
+            const roles = { Developer: 1, Admin: 2, Moderator: 4, User: 3 };
+            const order = Object.keys(roles);
+
+            for (const [i, userRole] of order.entries())
+            {
+                for (const [j, required] of order.entries())
+                {
+                    assert.equal(
+                        await allowed(required, roles[userRole]),
+                        j >= i,
+                        `${userRole} accessing ${required}`
+                    );
+                }
+            }
+        });
+
+        it('matches role names case insensitively', async () =>
+        {
+            assert.equal(await allowed('admin', 1), true);
+        });
+
+        it('stops on a cycle in role_roles', async () =>
+        {
+            // User > Developer closes the loop, so User can now reach every role
+            await stack.db.query('INSERT INTO `role_roles` (`role_id1`, `role_id2`) VALUES (3, 1)');
+
+            try
+            {
+                assert.equal(await allowed('Moderator', 3), true);
+            }
+            finally
+            {
+                await stack.db.query('DELETE FROM `role_roles` WHERE `role_id1` = 3 AND `role_id2` = 1');
+            }
         });
     });
 
