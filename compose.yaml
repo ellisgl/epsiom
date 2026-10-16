@@ -1,0 +1,23 @@
+# Development database: `npm run db:up`, then `npm start`.
+# epsiom.sql is loaded on the first start; `docker compose down -v` resets it.
+services:
+  db:
+    image: mysql:8.4
+    environment:
+      MYSQL_DATABASE: epsiom
+      MYSQL_USER: epsiom
+      MYSQL_PASSWORD: epsiom
+      MYSQL_RANDOM_ROOT_PASSWORD: "yes"
+    ports:
+      - "${DB_PORT:-3306}:3306"
+    volumes:
+      - ./epsiom.sql:/docker-entrypoint-initdb.d/epsiom.sql:ro
+      - db-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uepsiom", "-pepsiom"]
+      interval: 2s
+      timeout: 5s
+      retries: 30
+
+volumes:
+  db-data:
