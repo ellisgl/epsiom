@@ -21,15 +21,16 @@ CREATE TABLE IF NOT EXISTS `roles` (
   `role_id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `name` varchar(50) COLLATE utf8_unicode_ci DEFAULT '0',
   PRIMARY KEY (`role_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
--- Dumping data for table epsiom.roles: ~3 rows (approximately)
+-- Dumping data for table epsiom.roles: ~4 rows (approximately)
 DELETE FROM `roles`;
 /*!40000 ALTER TABLE `roles` DISABLE KEYS */;
 INSERT INTO `roles` (`role_id`, `name`) VALUES
 	(1, 'Developer'),
 	(2, 'Admin'),
-	(3, 'User');
+	(3, 'User'),
+	(4, 'Moderator');
 /*!40000 ALTER TABLE `roles` ENABLE KEYS */;
 
 -- Dumping structure for table epsiom.role_roles
@@ -42,13 +43,14 @@ CREATE TABLE IF NOT EXISTS `role_roles` (
   CONSTRAINT `role_id2` FOREIGN KEY (`role_id2`) REFERENCES `roles` (`role_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
--- Dumping data for table epsiom.role_roles: ~4 rows (approximately)
+-- Dumping data for table epsiom.role_roles: ~3 rows (approximately)
+-- Hierarchy: Developer > Admin > Moderator > User. Each role inherits everything below it.
 DELETE FROM `role_roles`;
 /*!40000 ALTER TABLE `role_roles` DISABLE KEYS */;
 INSERT INTO `role_roles` (`role_id1`, `role_id2`) VALUES
 	(1, 2),
-	(1, 3),
-	(2, 3);
+	(2, 4),
+	(4, 3);
 /*!40000 ALTER TABLE `role_roles` ENABLE KEYS */;
 
 -- Dumping structure for table epsiom.sessions
