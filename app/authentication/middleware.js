@@ -1,6 +1,6 @@
 'use strict';
 
-function authenticationMiddleware ()
+function authenticationMiddleware()
 {
     return function (req, res, next)
     {
@@ -9,8 +9,8 @@ function authenticationMiddleware ()
             return next();
         }
 
-        res.redirect('/login')
-    }
+        res.redirect('/login');
+    };
 }
 
 module.exports = authenticationMiddleware;

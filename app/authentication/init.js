@@ -10,56 +10,49 @@ const authenticationMiddleware = require('./middleware');
 function initPassport(passport, db)
 {
     passport.serializeUser(function (user, done)
-                           {
-                               done(null, user.user_id);
-                           });
+    {
+        done(null, user.user_id);
+    });
 
-    passport.deserializeUser(function (user_id, done)
-                             {
-                                 db.query(qry.user.getUserById(user_id), function (err, rows)
-                                 {
-                                     if (err)
-                                     {
-                                         return done(err);
-                                     }
+    passport.deserializeUser(async function (user_id, done)
+    {
+        try
+        {
+            const [rows] = await db.query(qry.user.getUserById(user_id));
 
-                                     if (!rows.length)
-                                     {
-                                         return done('ID Not found');
-                                     }
+            // A missing user (e.g. deleted) just ends the login session
+            return done(null, rows[0] || false);
+        }
+        catch (err)
+        {
+            return done(err);
+        }
+    });
 
-                                     return done(null, rows[0]);
-                                 });
-                             });
     // Local Login
     passport.use('local', new LocalStrategy({
             usernameField: 'username',
-            passwordField: 'password',
-            passReqToCallback: true // allows us to pass back the entire request to the callback
+            passwordField: 'password'
         },
-        function (req, username, password, done)
+        async function (username, password, done)
         {
-            db.query(qry.user.getUserByUsername(username), function (err, rows)
+            try
             {
-                if (err)
-                {
-                    return done(err);
-                }
+                const [rows] = await db.query(qry.user.getUserByUsername(username));
 
-                if (!rows.length)
+                if (!rows.length || !(await bcrypt.compare(password, rows[0].password)))
                 {
-                    return done(null, false, req.flash('err', 'Incorrect username and/or password'));
-                }
-
-                // Use bcrypt with 10 rounds.
-                if (!bcrypt.compareSync(password, rows[0].password))
-                {
-                    return done(null, false, req.flash('err', 'Incorrect username and/or password'));
+                    // Stored by passport.authenticate's failureFlash option
+                    return done(null, false, { type: 'err', message: 'Incorrect username and/or password' });
                 }
 
                 // Good login
                 return done(null, rows[0]);
-            });
+            }
+            catch (err)
+            {
+                return done(err);
+            }
         }));
 
     passport.authenticationMiddleware = authenticationMiddleware;
