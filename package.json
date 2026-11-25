@@ -32,6 +32,8 @@
     "supertest": "^7.3.1"
   },
   "overrides": {
+    "editorconfig": "^4.0.1",
+    "glob": "^14.0.2",
     "handlebars": "^4.7.10",
     "mysql2": "$mysql2"
   }
