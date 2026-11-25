@@ -18,7 +18,7 @@
   "dependencies": {
     "bcryptjs": "^3.0.3",
     "express": "^5.3.0",
-    "express-hbs": "^3.0.0",
+    "express-hbs": "^4.1.0",
     "express-mysql-session": "^3.0.3",
     "express-session": "^1.19.0",
     "mysql2": "^3.24.6",
@@ -34,7 +34,6 @@
   "overrides": {
     "editorconfig": "^4.0.1",
     "glob": "^14.0.2",
-    "handlebars": "^4.7.10",
     "mysql2": "$mysql2"
   }
 }
